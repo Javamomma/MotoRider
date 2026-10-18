@@ -61,7 +61,7 @@ const xml = (s) => String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&g
 
 /** GPX with both a route (turn points) and a track (full geometry). */
 export function toGpx(name, route) {
-  const title = xml(name || 'MotoRider ride');
+  const title = xml(name || 'ZAMA ride');
   const rtepts = route.maneuvers
     .map((m) => {
       const p = route.points[Math.min(m.idx, route.points.length - 1)];
@@ -70,7 +70,7 @@ export function toGpx(name, route) {
     .join('\n');
   const trkpts = route.points.map((p) => `      <trkpt lat="${p[0].toFixed(6)}" lon="${p[1].toFixed(6)}"/>`).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="MotoRider" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx version="1.1" creator="ZAMA" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata><name>${title}</name></metadata>
   <rte>
     <name>${title}</name>

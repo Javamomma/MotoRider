@@ -356,9 +356,9 @@ $('#btn-share').onclick = async () => {
   if (!ride) return;
   const url = shareUrl(ride, location.href);
   const r = state.routes[state.selected];
-  const text = `${ride.name} — ${fmtDist(r.km * 1000)}, ${twistLabel(r.twist).toLowerCase()}. Ride it with me on MotoRider:`;
+  const text = `${ride.name} — ${fmtDist(r.km * 1000)}, ${twistLabel(r.twist).toLowerCase()}. Ride it with me on ZAMA:`;
   if (navigator.share) {
-    try { await navigator.share({ title: 'MotoRider ride', text, url }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    try { await navigator.share({ title: 'ZAMA ride', text, url }); return; } catch (e) { if (e.name === 'AbortError') return; }
   }
   $('#share-url').value = url;
   $('#dlg-share').showModal();

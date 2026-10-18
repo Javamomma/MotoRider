@@ -1,5 +1,5 @@
 // Offline shell: the app opens without signal; routing and map tiles still need data.
-const CACHE = 'motorider-v1';
+const CACHE = 'zama-v1';
 const SHELL = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest',
   'js/app.js', 'js/geo.js', 'js/routing.js', 'js/nav.js', 'js/share.js',

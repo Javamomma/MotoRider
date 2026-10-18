@@ -1,7 +1,7 @@
 {
-  "name": "MotoRider",
-  "short_name": "MotoRider",
-  "description": "Twisty, well-paved motorcycle rides without the highways. Share them with family.",
+  "name": "ZAMA — Zen and the Art of Motorcycle Adventure",
+  "short_name": "ZAMA",
+  "description": "Zen and the Art of Motorcycle Adventure. Twisty, well-paved motorcycle rides without the highways. Share them with family.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

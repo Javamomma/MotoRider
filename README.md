@@ -1,12 +1,12 @@
-# 🏍️ MotoRider
+# ☯ ZAMA: Zen and the Art of Motorcycle Adventure
 
-A phone app for planning **motorcycle-friendly rides**: scenic, twisty, paved roads with no major highways. It gives turn-by-turn voice directions, and you can **share any ride with family** by sending a link.
+*The ride is the destination.* A nod to Robert Pirsig's *Zen and the Art of Motorcycle Maintenance*, ZAMA is a phone app for planning **motorcycle-friendly rides**: scenic, twisty, paved roads with no major highways. It gives turn-by-turn voice directions, and you can **share any ride with family** by sending a link.
 
 It's a web app that installs to your home screen (iPhone and Android), so there's no app store involved and nothing to pay for.
 
 ## What it does
 
-- **A → B rides.** Pick a destination, add stops if you want, and MotoRider finds curvy back-road routes to get there.
+- **A → B rides.** Pick a destination, add stops if you want, and ZAMA finds curvy back-road routes to get there.
 - **Loop rides.** Choose a length (say 60 mi) and a direction, and get a round trip that starts and ends at home.
 - **Ride style.** Choose *Direct*, *Curvy* or *Twistiest*, and how much extra distance you'll accept for better roads. Major highways, dirt/gravel and tolls can each be turned on or off.
 - **Up to 3 route options**, each showing distance, time, a twistiness rating (degrees of curve per km), and how much of it is on highways.
@@ -31,18 +31,18 @@ The repo deploys itself to **GitHub Pages** on every push to `main`:
 
 1. Merge to `main`.
 2. In GitHub go to **Settings → Pages**, and under *Build and deployment* set **Source = GitHub Actions**.
-3. The site will be at `https://<your-username>.github.io/MotoRider/`.
+3. The site will be at `https://<your-username>.github.io/MotoRider/`. The address follows the repo name, so renaming the repo to `ZAMA` makes it `.../ZAMA/`.
 
 > GitHub Pages for a **private** repo needs a paid GitHub plan. Otherwise, make the repo public (there are no secrets in it), or drag the folder onto [Netlify Drop](https://app.netlify.com/drop) or Cloudflare Pages. Any static host works. It must be **https** for GPS to work.
 
 ## How routes are chosen
 
-Routing is done by [Valhalla](https://github.com/valhalla/valhalla) using its **motorcycle** profile on OpenStreetMap data, with highways, trails and unpaved roads penalised or excluded. For curvy rides MotoRider asks for several candidate routes (alternates, plus detours through generated waypoints either side of the direct line, or around a circle for loops) and scores each one:
+Routing is done by [Valhalla](https://github.com/valhalla/valhalla) using its **motorcycle** profile on OpenStreetMap data, with highways, trails and unpaved roads penalised or excluded. For curvy rides ZAMA asks for several candidate routes (alternates, plus detours through generated waypoints either side of the direct line, or around a circle for loops) and scores each one:
 
 - **Twistiness:** total heading change per km of road, on a resampled line.
 - Penalties for **highway** and **rough-road** share, **doubling back** over the same road, and going past your **extra-distance** limit (or, for loops, missing the target length).
 
-"Scenic" is approximated by twisty minor roads. Those are usually the scenic ones, but MotoRider doesn't know about views. Add stops through places you know are beautiful to steer it there.
+"Scenic" is approximated by twisty minor roads. Those are usually the scenic ones, but ZAMA doesn't know about views. Add stops through places you know are beautiful to steer it there.
 
 ## Services used (all free, OpenStreetMap-based)
 

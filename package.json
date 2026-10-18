@@ -1,8 +1,8 @@
 {
-  "name": "motorider",
+  "name": "zama",
   "version": "1.0.0",
   "private": true,
-  "description": "Plan twisty, well-paved motorcycle rides that skip the highways, and share them with family.",
+  "description": "ZAMA — Zen and the Art of Motorcycle Adventure. Plan twisty, well-paved motorcycle rides that skip the highways, and share them with family.",
   "type": "module",
   "scripts": {
     "start": "npx --yes serve -l 8080 .",

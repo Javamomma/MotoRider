@@ -55,7 +55,8 @@ label.check input { width: 22px; height: 22px; accent-color: var(--accent); }
   .card.bottom { left: auto; right: 12px; }
 }
 
-.head h1 { font-size: 19px; margin: 0; flex: 1; }
+.head h1 { font-size: 19px; margin: 0; flex: 1; letter-spacing: 0.06em; }
+.head h1 small { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.02em; color: var(--muted); }
 .seg { display: flex; background: #0f1216; border: 1px solid var(--line); border-radius: 10px; padding: 3px; margin: 10px 0; }
 .seg button { flex: 1; border: none; background: transparent; min-height: 38px; padding: 6px; color: var(--muted); }
 .seg button.on { background: #2f3742; color: var(--text); font-weight: 600; }
