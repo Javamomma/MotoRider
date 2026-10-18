@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>MotoRider</title>
+  <meta name="description" content="Plan twisty, well-paved motorcycle rides that skip the highways, and share them with family.">
+  <meta name="theme-color" content="#14171c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="vendor/leaflet.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="map" aria-label="Map"></div>
+
+  <!-- Planner -->
+  <section id="planner" class="card top">
+    <div class="row head">
+      <h1>🏍️ MotoRider</h1>
+      <button id="btn-saved" class="icon" title="Saved rides" aria-label="Saved rides">★</button>
+      <button id="btn-settings" class="icon" title="Settings" aria-label="Settings">⚙</button>
+      <button id="btn-collapse" class="icon" title="Hide planner" aria-label="Hide planner">▴</button>
+    </div>
+
+    <div id="planner-body">
+      <div class="seg" role="tablist">
+        <button id="mode-ab" class="on" role="tab">A → B</button>
+        <button id="mode-loop" role="tab">Loop ride</button>
+      </div>
+
+      <div id="stops"></div>
+      <button id="btn-add-stop" class="link">+ Add stop</button>
+
+      <div id="loop-opts" hidden>
+        <label>Ride length <output id="loop-len-out">60 mi</output>
+          <input id="loop-len" type="range" min="15" max="250" step="5" value="60">
+        </label>
+        <label>Head
+          <select id="loop-dir">
+            <option value="">Any direction (surprise me)</option>
+            <option value="0">North</option><option value="45">Northeast</option>
+            <option value="90">East</option><option value="135">Southeast</option>
+            <option value="180">South</option><option value="225">Southwest</option>
+            <option value="270">West</option><option value="315">Northwest</option>
+          </select>
+        </label>
+      </div>
+
+      <details id="prefs">
+        <summary>Ride style</summary>
+        <label>Curves
+          <div class="seg small" id="twist-seg">
+            <button data-v="0">Direct</button>
+            <button data-v="1" class="on">Curvy</button>
+            <button data-v="2">Twistiest</button>
+          </div>
+        </label>
+        <label id="detour-wrap">Extra distance OK <output id="detour-out">+50%</output>
+          <input id="detour" type="range" min="10" max="150" step="10" value="50">
+        </label>
+        <label class="check"><input type="checkbox" id="pref-hwy" checked> Avoid major highways</label>
+        <label class="check"><input type="checkbox" id="pref-paved" checked> Paved roads only</label>
+        <label class="check"><input type="checkbox" id="pref-toll"> Avoid tolls</label>
+      </details>
+
+      <button id="btn-plan" class="primary">Find my ride</button>
+      <p id="status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section id="results" class="card bottom" hidden>
+    <div id="options"></div>
+    <div class="row actions">
+      <button id="btn-go" class="primary">▶ Ride</button>
+      <button id="btn-share">Share</button>
+      <button id="btn-save">Save</button>
+      <button id="btn-more" aria-haspopup="true">⋯</button>
+    </div>
+    <div id="more" class="row actions" hidden>
+      <button id="btn-gpx">Download GPX</button>
+      <button id="btn-turns">Turn list</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <ol id="turns" hidden></ol>
+  </section>
+
+  <!-- Navigation -->
+  <section id="nav" hidden>
+    <div id="nav-banner" class="card top">
+      <div id="nav-icon">⬆</div>
+      <div>
+        <div id="nav-dist"></div>
+        <div id="nav-text">Waiting for GPS…</div>
+      </div>
+    </div>
+    <div id="nav-off" class="card" hidden>
+      Off route. <button id="btn-reroute" class="primary">Reroute</button>
+    </div>
+    <div id="nav-foot" class="card bottom row">
+      <div id="nav-remaining"></div>
+      <button id="btn-mute" class="icon" aria-label="Mute voice">🔊</button>
+      <button id="btn-recenter" class="icon" aria-label="Recenter">◎</button>
+      <button id="btn-stop" class="danger">End</button>
+    </div>
+  </section>
+
+  <!-- Saved rides -->
+  <dialog id="dlg-saved">
+    <h2>Saved rides</h2>
+    <ul id="saved-list"></ul>
+    <p class="hint">Rides are saved on this phone. Use Share to send one to family.</p>
+    <form method="dialog"><button>Close</button></form>
+  </dialog>
+
+  <!-- Settings -->
+  <dialog id="dlg-settings">
+    <h2>Settings</h2>
+    <label>Units
+      <select id="set-units"><option value="mi">Miles</option><option value="km">Kilometers</option></select>
+    </label>
+    <label>Map style
+      <select id="set-tiles"><option value="osm">Street</option><option value="topo">Terrain</option></select>
+    </label>
+    <label>Routing server
+      <input id="set-endpoint" type="url" placeholder="https://valhalla1.openstreetmap.de">
+    </label>
+    <p class="hint">Uses the free FOSSGIS Valhalla server by default. Point this at your own Valhalla server if you ride a lot.</p>
+    <form method="dialog"><button>Done</button></form>
+  </dialog>
+
+  <!-- Share fallback -->
+  <dialog id="dlg-share">
+    <h2>Share this ride</h2>
+    <p>Send this link to family. It opens the same route on their phone.</p>
+    <input id="share-url" readonly>
+    <div class="row actions">
+      <button id="btn-copy" class="primary">Copy link</button>
+      <form method="dialog"><button>Close</button></form>
+    </div>
+  </dialog>
+
+  <div id="toast" role="alert" hidden></div>
+
+  <script src="vendor/leaflet.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
