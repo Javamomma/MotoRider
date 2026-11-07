@@ -37,7 +37,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir _site
-          cp -r index.html manifest.webmanifest sw.js css js icons vendor _site/
+          cp -r index.html hud.html manifest.webmanifest sw.js css js icons vendor _site/
           touch _site/.nojekyll
           cd _site
           git init -q -b gh-pages

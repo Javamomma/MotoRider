@@ -2,13 +2,14 @@ import { planRide, requestRoutes, DEFAULT_ENDPOINT } from './routing.js';
 import { twistLabel, nearestIndex } from './geo.js';
 import { Guidance, maneuverIcon } from './nav.js';
 import { shareUrl, rideFromHash, toGpx, savedRides } from './share.js';
+import { HudPublisher, toNavFrame } from './hudframe.js';
 
 const L = window.L;
 const $ = (s) => document.querySelector(s);
 
 // ---------- settings ----------
 const SETTINGS_KEY = 'motorider.settings.v1';
-const settings = Object.assign({ units: 'mi', tiles: 'osm', endpoint: '' }, (() => {
+const settings = Object.assign({ units: 'mi', tiles: 'osm', endpoint: '', hudUrl: '', hudKey: '' }, (() => {
   try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch { return {}; }
 })());
 const saveSettings = () => { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* ignore */ } };
@@ -435,6 +436,8 @@ $('#btn-settings').onclick = () => {
   $('#set-units').value = settings.units;
   $('#set-tiles').value = settings.tiles;
   $('#set-endpoint').value = settings.endpoint;
+  $('#set-hud-url').value = settings.hudUrl;
+  $('#set-hud-key').value = settings.hudKey;
   $('#dlg-settings').showModal();
 };
 $('#dlg-settings').addEventListener('close', () => {
@@ -442,6 +445,8 @@ $('#dlg-settings').addEventListener('close', () => {
   settings.units = $('#set-units').value;
   settings.tiles = $('#set-tiles').value;
   settings.endpoint = $('#set-endpoint').value;
+  settings.hudUrl = $('#set-hud-url').value.trim();
+  settings.hudKey = $('#set-hud-key').value.trim();
   saveSettings();
   applyTiles();
   if (unitsChanged) {
@@ -460,6 +465,7 @@ async function startNav() {
   if (!route) return;
   if (!navigator.geolocation) return toast('GPS is not available on this device');
   navState = { route, guide: new Guidance(route), follow: true, muted: false, wakeLock: null };
+  navState.hud = new HudPublisher({ url: settings.hudUrl, key: settings.hudKey });
   $('#planner').hidden = true;
   $('#results').hidden = true;
   $('#nav').hidden = false;
@@ -490,6 +496,7 @@ function onFix(pos) {
   navState.line.setLatLngs(r.points.slice(u.idx));
   navState.done.setLatLngs(r.points.slice(0, u.idx + 1));
   if (u.speak) speak(u.speak);
+  navState.hud.publish(toNavFrame(navState.guide, u, { eta, ride: state.rideName }));
   if (navState.follow) map.setView(p, Math.max(map.getZoom(), 15), { animate: true });
   if (u.arrived && !navState.arrived) {
     navState.arrived = true;
@@ -510,6 +517,7 @@ function stopNav() {
   navState.wakeLock?.release?.();
   map.off('dragstart', pauseFollow);
   speechSynthesis?.cancel();
+  navState.hud.close();
   navState = null;
   $('#nav').hidden = true;
   $('#planner').hidden = false;
