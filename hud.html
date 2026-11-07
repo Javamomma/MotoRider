@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=600, initial-scale=1">
+  <title>ZAMA HUD</title>
+  <meta name="theme-color" content="#000000">
+  <link rel="stylesheet" href="css/hud.css">
+</head>
+<body>
+  <!-- 600×600 glance view for Meta Ray-Ban Display. Black renders as transparent on the glasses. -->
+  <main id="hud" data-state="idle" aria-live="polite">
+    <section id="turn">
+      <svg id="arrow" viewBox="-100 -100 200 200" aria-hidden="true"></svg>
+      <div id="dist"></div>
+      <div id="street"></div>
+      <div id="then" hidden><span>then</span><svg viewBox="-100 -100 200 200" aria-hidden="true"></svg></div>
+    </section>
+    <section id="compact" hidden>
+      <svg viewBox="-100 -100 200 200" aria-hidden="true"></svg>
+      <span></span>
+    </section>
+    <section id="eta" hidden>
+      <div id="eta-rem"></div>
+      <div id="eta-time"></div>
+      <div id="eta-ride"></div>
+    </section>
+    <section id="msg"></section>
+  </main>
+  <script type="module" src="js/hud.js"></script>
+</body>
+</html>

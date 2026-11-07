@@ -131,6 +131,13 @@
       <input id="set-endpoint" type="url" placeholder="https://valhalla1.openstreetmap.de">
     </label>
     <p class="hint">Uses the free FOSSGIS Valhalla server by default. Point this at your own Valhalla server if you ride a lot.</p>
+    <label>Glasses HUD URL
+      <input id="set-hud-url" type="url" placeholder="https://…/api/nav">
+    </label>
+    <label>Glasses HUD key
+      <input id="set-hud-key" type="password" autocomplete="off" placeholder="optional">
+    </label>
+    <p class="hint">During a ride, ZAMA sends each next-turn update here for your Meta Ray-Ban Display. To preview the glasses view, open <a href="hud.html" target="_blank" rel="noopener">hud.html</a> in another tab (or <a href="hud.html?demo" target="_blank" rel="noopener">the demo</a>).</p>
     <form method="dialog"><button>Done</button></form>
   </dialog>
 
