@@ -27,11 +27,9 @@ The family can install it the same way, or just open the ride links you send.
 
 ## Hosting (free)
 
-The repo deploys itself to **GitHub Pages** on every push to `main`:
+The repo deploys itself to **GitHub Pages** on every push to `main`. The workflow publishes the site to a `gh-pages` branch, and GitHub serves it at `https://<your-username>.github.io/MotoRider/`. The address follows the repo name, so renaming the repo to `ZAMA` makes it `.../ZAMA/`.
 
-1. Merge to `main`.
-2. In GitHub go to **Settings → Pages**, and under *Build and deployment* set **Source = GitHub Actions**.
-3. The site will be at `https://<your-username>.github.io/MotoRider/`. The address follows the repo name, so renaming the repo to `ZAMA` makes it `.../ZAMA/`.
+If the site doesn't appear a few minutes after the first deploy, go to **Settings → Pages** and set *Source* to **Deploy from a branch**, with branch **gh-pages** and folder **/ (root)**.
 
 > GitHub Pages for a **private** repo needs a paid GitHub plan. Otherwise, make the repo public (there are no secrets in it), or drag the folder onto [Netlify Drop](https://app.netlify.com/drop) or Cloudflare Pages. Any static host works. It must be **https** for GPS to work.
 
