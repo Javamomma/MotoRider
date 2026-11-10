@@ -74,3 +74,9 @@ test('spoken distances', () => {
   assert.equal(spokenDistance(5000), '3.1 miles');
   assert.equal(spokenDistance(100), '300 feet');
 });
+
+test('share links keep which via points the planner made', () => {
+  const r = { name: 'x', prefs: {}, locations: [{ lat: 40, lon: -105 }, { lat: 40.1, lon: -105.1, through: true, major: true }, { lat: 40.2, lon: -105.2, through: true }, { lat: 40.3, lon: -105.3 }] };
+  const back = decodeRide(encodeRide(r)).locations;
+  assert.deepEqual(back.map((l) => [!!l.through, !!l.major]), [[false, false], [true, true], [true, false], [false, false]]);
+});

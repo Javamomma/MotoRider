@@ -72,3 +72,52 @@ test('planRide surfaces routing errors', async () => {
   const fetchImpl = async () => ({ ok: false, status: 400, json: async () => ({ error: 'No path could be found for input' }) });
   await assert.rejects(planRide({ mode: 'ab', stops: [A, B], fetchImpl, politeDelay: 0 }), /No route found/);
 });
+
+test('planner-made via points snap to through roads; pinned ones do not', () => {
+  const r = buildRequest([A, { lat: 40.2, lon: -105.2, through: true, major: true }, { lat: 40.3, lon: -105.1, through: true }, B], {});
+  assert.deepEqual(r.locations[1].search_filter, { min_road_class: 'tertiary' });
+  assert.equal(r.locations[1].radius, 1000);
+  assert.equal(r.locations[2].search_filter, undefined);
+  assert.ok(detourCandidates([A, B], 1)[0][1].major);
+  assert.ok(loopCandidates(A, 100, 0, 1)[0][2].major);
+});
+
+test('an alternate is pinned to its own road so it can be asked for again', async () => {
+  const first = straight([40, -105], 30, 200), second = wiggly([40, -105], 30, 200, 25);
+  const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ trip: fakeTrip(first), alternates: [{ trip: fakeTrip(second) }] }) });
+  const { requestRoutes, pinned } = await import('../js/routing.js');
+  const [a, b] = await requestRoutes([A, B], { alternates: 2 }, 'https://x.test', fetchImpl);
+  assert.equal(a.locations.length, 2);
+  assert.equal(b.locations.length, 5);
+  assert.ok(b.locations.slice(1, 4).every((l) => l.through && !l.major));
+  // The pins lie on the alternate's own line, about a quarter, half and three quarters along.
+  const mid = b.locations[2];
+  assert.ok(second.some((p) => Math.abs(p[0] - mid.lat) < 1e-5 && Math.abs(p[1] - mid.lon) < 1e-5));
+  assert.equal(pinned([A, B], first.slice(0, 3)).length, 2);
+});
+
+test('options that double back, leave the pavement or run far too long are not offered', async () => {
+  const { acceptable } = await import('../js/routing.js');
+  const ok = { km: 60, overlap: 0.02, roughShare: 0 };
+  assert.ok(acceptable(ok, { baseKm: 50 }));
+  assert.ok(!acceptable({ ...ok, overlap: 0.2 }, { baseKm: 50 }));
+  assert.ok(!acceptable({ ...ok, roughShare: 0.3 }, { baseKm: 50 }));
+  assert.ok(acceptable({ ...ok, roughShare: 0.3 }, { baseKm: 50, pavedOnly: false }));
+  assert.ok(!acceptable({ ...ok, km: 150 }, { baseKm: 50 }));
+  assert.ok(!acceptable({ ...ok, km: 250 }, { targetKm: 160 }));
+});
+
+test('a loop that comes back far too long is resized and tried again', async () => {
+  const sizes = [];
+  const fetchImpl = async (url, init) => {
+    const locs = JSON.parse(init.body).locations;
+    const span = haversine([locs[0].lat, locs[0].lon], [locs[2].lat, locs[2].lon]) / 1000;
+    sizes.push(span);
+    // Mountain roads: the ride is eight times the circle's width.
+    return { ok: true, status: 200, json: async () => ({ trip: fakeTrip(wiggly([40, -105], 30, 300, 20), { km: span * 8 }) }) };
+  };
+  const routes = await planRide({ mode: 'loop', stops: [A], loopKm: 100, direction: 90, twistLevel: 1, fetchImpl, politeDelay: 0 });
+  assert.equal(sizes.length, 6); // three headings, each tried twice
+  assert.ok(sizes[1] < sizes[0] * 0.7, `resized ${sizes[0]} -> ${sizes[1]}`);
+  assert.ok(Math.abs(routes[0].km - 100) < 30, `${routes[0].km} km`);
+});
