@@ -1,0 +1,49 @@
+/* Glasses HUD: 600×600, black = transparent on the Display, keep 24px clear at the edges. */
+:root {
+  --fg: #ffffff;
+  --accent: #ffb020;
+  --warn: #ff5a3c;
+  --dim: #8a8a8a;
+  --bg: #000000;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body { background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+body { display: grid; place-items: center; min-height: 100vh; }
+
+#hud {
+  width: 600px; height: 600px; padding: 24px; position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+#hud > section[hidden] { display: none; }
+
+#turn { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+#arrow { width: 220px; height: 220px; }
+#dist { font-size: 96px; font-weight: 800; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+#dist small { font-size: 44px; font-weight: 700; margin-left: 6px; letter-spacing: 0; }
+#street {
+  font-size: 34px; font-weight: 600; max-width: 552px; line-height: 1.15;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#then { display: flex; align-items: center; gap: 10px; color: var(--dim); font-size: 28px; margin-top: 4px; }
+#then svg { width: 54px; height: 54px; }
+#then[hidden] { display: none; }
+
+/* Far from the next turn: a single small line so the view stays clear. */
+#compact { position: absolute; bottom: 24px; left: 24px; right: 24px; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 36px; font-weight: 700; color: var(--dim); }
+#compact svg { width: 48px; height: 48px; }
+
+#eta { display: flex; flex-direction: column; gap: 14px; }
+#eta-rem { font-size: 84px; font-weight: 800; }
+#eta-time { font-size: 48px; color: var(--accent); font-weight: 700; }
+#eta-ride { font-size: 28px; color: var(--dim); max-width: 552px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+#msg { font-size: 44px; font-weight: 700; color: var(--dim); }
+#msg:empty { display: none; }
+
+svg .shape { fill: none; stroke: currentColor; stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; }
+svg .head { fill: currentColor; }
+#arrow { color: var(--accent); }
+
+[data-state="offroute"] #arrow, [data-state="offroute"] #dist { color: var(--warn); }
+[data-state="stale"] #turn { opacity: 0.35; }
