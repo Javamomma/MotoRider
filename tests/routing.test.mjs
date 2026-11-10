@@ -121,3 +121,16 @@ test('a loop that comes back far too long is resized and tried again', async () 
   assert.ok(sizes[1] < sizes[0] * 0.7, `resized ${sizes[0]} -> ${sizes[1]}`);
   assert.ok(Math.abs(routes[0].km - 100) < 30, `${routes[0].km} km`);
 });
+
+test('a clean option is preferred over a higher-scoring one that leaves the pavement', async () => {
+  let n = 0;
+  const fetchImpl = async () => {
+    n++;
+    const trip = fakeTrip(n === 1 ? wiggly([40, -105], 30, 300, 12) : wiggly([40, -105], 30, 300, 40), { km: 20 });
+    if (n > 1) trip.legs[0].maneuvers[0].rough = true; // the twistier detours are all on rough road
+    return { ok: true, status: 200, json: async () => ({ trip }) };
+  };
+  const routes = await planRide({ mode: 'ab', stops: [A, B], twistLevel: 1, prefs: {}, fetchImpl, politeDelay: 0 });
+  assert.equal(routes.length, 1);
+  assert.equal(routes[0].roughShare, 0);
+});

@@ -242,7 +242,10 @@ export async function planRide(opts) {
 
   candidates.sort((a, b) => b.score - a.score);
   // An option is only offered if it is a ride worth taking; the best one is always kept so there is an answer.
-  const worth = candidates.filter((r, i) => i === 0 || acceptable(r, { ...ctx, pavedOnly: prefs.pavedOnly !== false }));
+  const ok = (r) => acceptable(r, { ...ctx, pavedOnly: prefs.pavedOnly !== false });
+  const good = candidates.filter(ok);
+  // Nothing clean (sparse mountain roads, say): offer the best there is, and the app says what is wrong with it.
+  const worth = good.length ? good : candidates.slice(0, 1);
   const picked = [];
   for (const r of worth) {
     const dup = picked.some((p) => Math.abs(p.km - r.km) / p.km < 0.02 && Math.abs(p.twist - r.twist) < 4);
