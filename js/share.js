@@ -21,7 +21,8 @@ export function rideToPayload(ride) {
   return {
     v: 1,
     n: ride.name || '',
-    l: ride.locations.map((l) => [+l.lat.toFixed(5), +l.lon.toFixed(5), l.through ? 1 : 0, l.name || '']),
+    // 0 a stop, 1 a point to pass through, 2 a planner-made point snapped to a through road.
+    l: ride.locations.map((l) => [+l.lat.toFixed(5), +l.lon.toFixed(5), l.through ? (l.major ? 2 : 1) : 0, l.name || '']),
     p: { h: ride.prefs.avoidHighways === false ? 0 : 1, t: ride.prefs.avoidTolls ? 1 : 0, u: ride.prefs.pavedOnly === false ? 0 : 1 },
   };
 }
@@ -32,7 +33,7 @@ export function payloadToRide(p) {
     name: String(p.n || ''),
     locations: p.l.map(([lat, lon, through, name]) => {
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error('Bad coordinates in ride link');
-      return { lat, lon, through: !!through, name: name || '' };
+      return { lat, lon, through: !!through, ...(through === 2 ? { major: true } : {}), name: name || '' };
     }),
     prefs: { avoidHighways: p.p?.h !== 0, avoidTolls: p.p?.t === 1, pavedOnly: p.p?.u !== 0 },
   };

@@ -70,3 +70,4 @@ Filled in at the end of each week: what shipped, what was tested for real, what 
 
 | Week | Shipped | Tested for real | Plan changes |
 |---|---|---|---|
+| 1 (started early, Nov 9) | Live shakedown in GitHub Actions (10 real rides, weekly); fixes for what it found: an alternate route is pinned so sharing returns the same ride, planner-made via points snap to through roads, poor options are no longer offered, mountain loops are resized to the length asked; 5 real answers as CI fixtures | Planner, guidance, search and the browser's CORS check against the real servers, from GitHub's runners: 26 options over 10 rides, problems down from 14 to 1 (a 100 mi loop west of Boulder still doubles back; now labelled). Not yet on a phone by the owner. | Session network access was declined, so live checks run in CI. The 10-rides-on-a-phone check moves to the owner's first try of the updated site. |

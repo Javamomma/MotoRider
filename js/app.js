@@ -314,7 +314,7 @@ function drawRoutes(fit = false) {
     const hwy = Math.round(r.highwayShare * 100);
     el.innerHTML = `
       <div class="t"><span>${state.routes.length > 1 ? `Option ${i + 1}` : 'Your ride'} ${twistBadge(r.twist)}</span><span>${fmtDist(r.km * 1000)}</span></div>
-      <div class="s"><span>⏱ ${fmtTime(r.seconds)}</span><span>〰 ${Math.round(r.twist)}°/km of curves</span><span>${hwy ? `🛣 ~${hwy}% highway` : '🛣 no highways'}</span>${r.roughShare > 0.01 ? `<span>⚠ some rough road</span>` : ''}${r.hasToll ? '<span>💲 tolls</span>' : ''}</div>`;
+      <div class="s"><span>⏱ ${fmtTime(r.seconds)}</span><span>〰 ${Math.round(r.twist)}°/km of curves</span><span>${hwy ? `🛣 ~${hwy}% highway` : '🛣 no highways'}</span>${r.roughShare > 0.01 ? `<span>⚠ some rough road</span>` : ''}${r.overlap > 0.12 ? `<span>⚠ doubles back on ${Math.round(r.overlap * 100)}%</span>` : ''}${r.hasToll ? '<span>💲 tolls</span>' : ''}</div>`;
     el.onclick = () => { state.selected = i; drawRoutes(); };
     opts.appendChild(el);
   });

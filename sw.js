@@ -1,5 +1,5 @@
 // Offline shell: the app opens without signal; routing and map tiles still need data.
-const CACHE = 'zama-v2';
+const CACHE = 'zama-v3';
 const SHELL = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest',
   'js/app.js', 'js/geo.js', 'js/routing.js', 'js/nav.js', 'js/share.js',

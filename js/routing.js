@@ -3,22 +3,26 @@
 // through generated via points — and scoring each for curves, highway use
 // and backtracking.
 
-import { decodePolyline, haversine, bearing, destination, twistiness, overlapFraction } from './geo.js';
+import { decodePolyline, haversine, bearing, destination, twistiness, overlapFraction, cumulative } from './geo.js';
 
 export const DEFAULT_ENDPOINT = 'https://valhalla1.openstreetmap.de';
 
 /**
- * Location: { lat, lon, name?, through? }. `through` marks a generated via
- * point the ride passes through without stopping.
+ * Location: { lat, lon, name?, through?, major? }. `through` marks a via point
+ * the ride passes through without stopping. `major` marks one the planner
+ * invented: it is snapped to a through road (tertiary or better) within a
+ * kilometre, so a point that lands on a driveway or dead end does not send
+ * the ride up it and back.
  */
 export function buildRequest(locations, prefs = {}) {
   const last = locations.length - 1;
   const req = {
-    locations: locations.map((l, i) => ({
-      lat: +l.lat.toFixed(6),
-      lon: +l.lon.toFixed(6),
-      type: i > 0 && i < last && l.through ? 'through' : 'break',
-    })),
+    locations: locations.map((l, i) => {
+      const via = i > 0 && i < last && l.through;
+      const out = { lat: +l.lat.toFixed(6), lon: +l.lon.toFixed(6), type: via ? 'through' : 'break' };
+      if (via && l.major) Object.assign(out, { radius: 1000, search_filter: { min_road_class: 'tertiary' } });
+      return out;
+    }),
     costing: 'motorcycle',
     costing_options: {
       motorcycle: {
@@ -96,7 +100,25 @@ export async function requestRoutes(locations, prefs, endpoint = DEFAULT_ENDPOIN
     throw new RoutingError(data.error ? `No route found: ${data.error}` : `Routing failed (HTTP ${res.status}).`);
   }
   const trips = [data.trip, ...(data.alternates || []).map((a) => a.trip)];
-  return trips.map((t) => ({ ...parseTrip(t), locations }));
+  return trips.map((t, i) => {
+    const route = parseTrip(t);
+    // Asking again for the same two places returns the first answer, not this alternate. Pin an alternate to its
+    // own road with points taken from it, so a saved or shared ride comes back as the route that was chosen.
+    return { ...route, locations: i === 0 ? locations : pinned(locations, route.points) };
+  });
+}
+
+/** `locations` with through points added at a quarter, half and three quarters of the way along `points`. */
+export function pinned(locations, points) {
+  if (points.length < 8) return locations;
+  const cum = cumulative(points);
+  const total = cum[cum.length - 1];
+  const at = (f) => {
+    let i = 0;
+    while (i < cum.length - 1 && cum[i] < total * f) i++;
+    return { lat: points[i][0], lon: points[i][1], through: true };
+  };
+  return [locations[0], at(0.25), at(0.5), at(0.75), locations[locations.length - 1]];
 }
 
 /** Higher is better. Rewards curves; punishes highways, dirt, backtracking and overly long detours. */
@@ -108,6 +130,15 @@ export function scoreRoute(route, { baseKm, maxDetour = 1.5, targetKm } = {}) {
   if (baseKm && route.km > baseKm * maxDetour) s *= Math.max(0, 1 - (route.km / (baseKm * maxDetour) - 1) * 3);
   if (targetKm) s *= Math.max(0, 1 - Math.max(0, Math.abs(route.km - targetKm) / targetKm - 0.15) * 2);
   return s;
+}
+
+/** False for a candidate that doubles back, leaves the pavement, or strays too far from the length that was asked for. */
+export function acceptable(route, { baseKm, maxDetour = 1.5, targetKm, pavedOnly = true } = {}) {
+  if (route.overlap > 0.12) return false;
+  if (pavedOnly && route.roughShare > 0.1) return false;
+  if (baseKm && route.km > baseKm * maxDetour * 1.1) return false;
+  if (targetKm && Math.abs(route.km - targetKm) / targetKm > 0.3) return false;
+  return true;
 }
 
 const pt = (l) => [l.lat, l.lon];
@@ -126,7 +157,7 @@ export function detourCandidates(stops, level) {
       const d = haversine(a, b);
       if (d > 8000) {
         const mid = destination(a, bearing(a, b), d / 2);
-        out.push(loc(destination(mid, bearing(a, b) + 90, d * off), { through: true }));
+        out.push(loc(destination(mid, bearing(a, b) + 90, d * off), { through: true, major: true }));
       }
       out.push(stops[i]);
     }
@@ -139,18 +170,23 @@ export function detourCandidates(stops, level) {
  * ending at `start`, heading off in `direction` degrees (or every way if null).
  */
 export function loopCandidates(start, km, direction = null, count = 4) {
-  // Roads wander, so the drawn circle is smaller than the target length.
-  const radius = (km * 1000) / (2 * Math.PI * 1.3);
-  const s = pt(start);
-  const headings = direction == null
+  return loopHeadings(direction, count).map((h) => loopFor(start, km, h));
+}
+
+export function loopHeadings(direction = null, count = 4) {
+  return direction == null
     ? Array.from({ length: count }, (_, i) => (i * 360) / count + 20)
     : [direction - 25, direction, direction + 25].slice(0, count);
-  return headings.map((h) => {
-    const center = destination(s, h, radius);
-    const back = (h + 180) % 360; // bearing from center to start
-    const vias = [-80, 0, 80].map((a) => loc(destination(center, back + 180 + a, radius), { through: true }));
-    return [start, ...vias, { ...start }];
-  });
+}
+
+/** One loop heading off on bearing `h`. `scale` shrinks or grows the circle when the roads made the first try too long or short. */
+export function loopFor(start, km, h, scale = 1) {
+  // Roads wander, so the drawn circle is smaller than the target length.
+  const radius = ((km * 1000) / (2 * Math.PI * 1.3)) * scale;
+  const s = pt(start);
+  const center = destination(s, h, radius);
+  const vias = [-80, 0, 80].map((a) => loc(destination(center, h + a, radius), { through: true, major: true }));
+  return [start, ...vias, { ...start }];
 }
 
 /**
@@ -169,8 +205,9 @@ export async function planRide(opts) {
   let base = [];
   let lists;
 
+  const headings = mode === 'loop' ? loopHeadings(opts.direction ?? null, twistLevel >= 2 ? 5 : 3) : [];
   if (mode === 'loop') {
-    lists = loopCandidates(stops[0], opts.loopKm, opts.direction ?? null, twistLevel >= 2 ? 5 : 3);
+    lists = headings.map((h) => loopFor(stops[0], opts.loopKm, h));
   } else {
     onProgress(0, 1);
     base = await call(stops, { alternates: stops.length === 2 ? 2 : 0 });
@@ -182,7 +219,15 @@ export async function planRide(opts) {
     onProgress(i + 1, lists.length + 1);
     try {
       await gap();
-      candidates.push(...(await call(lists[i])));
+      let found = await call(lists[i]);
+      // Sparse or winding roads can make a loop far longer (or shorter) than asked: resize the circle once and try again.
+      const off = mode === 'loop' && found[0] ? found[0].km / opts.loopKm : 1;
+      if (off > 1.2 || off < 0.8) {
+        await gap();
+        const again = await call(loopFor(stops[0], opts.loopKm, headings[i], Math.min(1.6, Math.max(0.35, 1 / off))));
+        if (again[0] && Math.abs(again[0].km - opts.loopKm) < Math.abs(found[0].km - opts.loopKm)) found = again;
+      }
+      candidates.push(...found);
     } catch (e) {
       firstError ??= e;
     }
@@ -196,8 +241,13 @@ export async function planRide(opts) {
   if (twistLevel === 0 && base.length) base[0].score = Infinity;
 
   candidates.sort((a, b) => b.score - a.score);
+  // An option is only offered if it is a ride worth taking; the best one is always kept so there is an answer.
+  const ok = (r) => acceptable(r, { ...ctx, pavedOnly: prefs.pavedOnly !== false });
+  const good = candidates.filter(ok);
+  // Nothing clean (sparse mountain roads, say): offer the best there is, and the app says what is wrong with it.
+  const worth = good.length ? good : candidates.slice(0, 1);
   const picked = [];
-  for (const r of candidates) {
+  for (const r of worth) {
     const dup = picked.some((p) => Math.abs(p.km - r.km) / p.km < 0.02 && Math.abs(p.twist - r.twist) < 4);
     if (!dup) picked.push(r);
     if (picked.length === 3) break;
